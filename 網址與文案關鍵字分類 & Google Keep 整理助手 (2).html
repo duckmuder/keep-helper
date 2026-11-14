@@ -1,0 +1,1254 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>網址與文案關鍵字分類 &amp; Google Keep 整理助手</title>
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+TC:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    body {
+      font-family: 'Inter', 'Noto Sans TC', -apple-system, BlinkMacSystemFont, sans-serif;
+      background-color: #faf9f5;
+      color: #1f2937;
+    }
+    .keep-shadow {
+      box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 4px 12px rgba(0,0,0,0.04);
+    }
+    .toast-enter {
+      animation: slideUp 0.22s ease-out forwards;
+    }
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(12px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col">
+  <!-- Header -->
+  <header class="bg-white border-b border-amber-200/80 sticky top-0 z-30">
+    <div class="max-w-5xl mx-auto px-4 sm:px-6 py-3.5 flex flex-wrap items-center justify-between gap-3">
+      <div class="flex items-center gap-2.5">
+        <div class="w-9 h-9 rounded-xl bg-amber-400 flex items-center justify-center text-amber-950 font-bold shadow-sm">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+          </svg>
+        </div>
+        <div>
+          <h1 class="text-base sm:text-lg font-bold text-gray-900 leading-tight">網址與文案關鍵字分類助手</h1>
+          <p class="text-xs text-gray-500">智慧判斷教學／美食／購物等語意分類，一鍵複製存入 Google Keep</p>
+        </div>
+      </div>
+
+      <div class="flex flex-wrap items-center gap-2">
+        <button id="openAiBtn" type="button" class="px-3 py-1.5 text-xs sm:text-sm font-medium rounded-lg border border-gray-200 bg-white hover:bg-gray-50 text-gray-700 transition cursor-pointer inline-flex items-center gap-1.5">
+          <span id="aiBadgeDot" class="w-2 h-2 rounded-full bg-gray-300"></span>
+          <span>AI 語意設定</span>
+        </button>
+        <button id="openRulesBtn" type="button" class="px-3 py-1.5 text-xs sm:text-sm font-medium rounded-lg border border-gray-200 bg-white hover:bg-gray-50 text-gray-700 transition cursor-pointer">
+          自訂規則
+        </button>
+        <a href="https://keep.google.com/" target="_blank" rel="noopener noreferrer" class="px-3 py-1.5 text-xs sm:text-sm font-medium rounded-lg bg-amber-400 hover:bg-amber-500 text-amber-950 transition inline-flex items-center gap-1.5 shadow-sm">
+          <span>開啟 Google Keep</span>
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+          </svg>
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <!-- Info Banner -->
+  <div class="max-w-5xl w-full mx-auto px-4 sm:px-6 pt-4">
+    <div class="rounded-xl bg-amber-50 border border-amber-200/90 px-4 py-3 text-xs sm:text-sm text-amber-900 flex items-start gap-2.5">
+      <svg class="w-4 h-4 sm:w-5 sm:h-5 text-amber-600 shrink-0 mt-0.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+      </svg>
+      <p class="leading-relaxed">
+        <strong>雙引擎語意分類：</strong>內建<strong>語意計分引擎</strong>，就算文案裡沒寫「教學」或「美食」，也能從語氣與詞彙（如「步驟／只要／設定」vs「湯頭／訂位／必點」）自動分辨；若在右上角「AI 語意設定」填入您的 Gemini API Key，還能直接由 AI 深度讀懂整段文案並精準分類！
+      </p>
+    </div>
+  </div>
+
+  <!-- Main Content -->
+  <main class="max-w-5xl w-full mx-auto px-4 sm:px-6 py-5 flex-1 space-y-6">
+    <!-- Input Card -->
+    <section class="bg-white rounded-2xl border border-gray-200/80 keep-shadow p-4 sm:p-6">
+      <form id="urlForm" class="space-y-4">
+        <div>
+          <div class="flex flex-wrap items-center justify-between gap-2 mb-1.5">
+            <label for="urlInput" class="block text-sm font-semibold text-gray-800">貼上網址或文案內容</label>
+            <div class="flex flex-wrap items-center gap-2">
+              <button type="button" id="demoFoodBtn" class="px-2.5 py-1 rounded-lg bg-orange-50 hover:bg-orange-100 text-orange-800 text-xs font-medium transition cursor-pointer">
+                填入美食範例
+              </button>
+              <button type="button" id="demoTutorialBtn" class="px-2.5 py-1 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-800 text-xs font-medium transition cursor-pointer">
+                填入教學範例
+              </button>
+              <label class="inline-flex items-center gap-1.5 text-xs text-gray-600 cursor-pointer select-none ml-1">
+                <input id="autoFetchToggle" type="checkbox" checked class="rounded border-gray-300 text-amber-500 focus:ring-amber-400" />
+                <span>含網址時自動抓內文</span>
+              </label>
+            </div>
+          </div>
+          <textarea
+            id="urlInput"
+            rows="3"
+            placeholder="貼上任何網址（https://...）、整段社群貼文、食記或教學筆記，系統會自動判斷主題並加上分類標籤..."
+            class="w-full rounded-xl border border-gray-300 px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-amber-400 resize-y"
+            required
+          ></textarea>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label for="titleInput" class="block text-xs font-medium text-gray-600 mb-1">標題（選填，留空將自動從文案或網頁擷取）</label>
+            <input
+              id="titleInput"
+              type="text"
+              placeholder="留空則自動產生標題"
+              class="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
+            />
+          </div>
+          <div>
+            <label for="customTagsInput" class="block text-xs font-medium text-gray-600 mb-1">額外自訂標籤（選填，以空白或逗號分隔）</label>
+            <input
+              id="customTagsInput"
+              type="text"
+              placeholder="例如：必看, 靈感"
+              class="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
+            />
+          </div>
+        </div>
+
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <p class="text-xs text-gray-400">支援純文案自動語意分類、純網址讀取，或「文案 + 網址」混合貼上</p>
+          <button
+            id="submitBtn"
+            type="submit"
+            class="px-5 py-2.5 rounded-xl bg-gray-900 hover:bg-gray-800 disabled:opacity-60 text-white text-sm font-semibold transition shrink-0 cursor-pointer"
+          >
+            讀取文案並加上分類
+          </button>
+        </div>
+
+        <!-- Fetch Status -->
+        <div id="fetchStatusBox" class="hidden rounded-xl px-3.5 py-2 text-xs font-medium flex items-center gap-2"></div>
+
+        <!-- Live Preview of Detected Tags -->
+        <div id="livePreviewBox" class="hidden rounded-xl bg-gray-50 border border-gray-200/80 px-3.5 py-2.5 flex flex-wrap items-center gap-2 text-xs">
+          <span class="text-gray-500 font-medium">即時語意預判：</span>
+          <div id="livePreviewTags" class="flex flex-wrap gap-1.5"></div>
+        </div>
+      </form>
+    </section>
+
+    <!-- Filter & Toolbar -->
+    <section class="space-y-3">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div class="flex flex-wrap items-center gap-2">
+          <div class="relative">
+            <input
+              id="searchInput"
+              type="text"
+              placeholder="搜尋文案、網址、標題或標籤..."
+              class="w-56 sm:w-64 rounded-xl border border-gray-200 bg-white pl-8 pr-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
+            />
+            <svg class="w-4 h-4 text-gray-400 absolute left-2.5 top-2" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+          </div>
+
+          <select id="statusFilter" class="rounded-xl border border-gray-200 bg-white px-3 py-1.5 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-amber-400">
+            <option value="all">全部狀態</option>
+            <option value="pending">尚未存 Keep</option>
+            <option value="saved">已標記存入 Keep</option>
+          </select>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <button id="exportBtn" type="button" class="px-3 py-1.5 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 text-xs font-medium text-gray-700 transition cursor-pointer">
+            匯出文字檔
+          </button>
+          <button id="clearAllBtn" type="button" class="px-3 py-1.5 rounded-lg border border-red-200 bg-white hover:bg-red-50 text-xs font-medium text-red-600 transition cursor-pointer">
+            清空清單
+          </button>
+        </div>
+      </div>
+
+      <!-- Category Chips -->
+      <div id="categoryFilterBar" class="flex flex-wrap items-center gap-1.5"></div>
+    </section>
+
+    <!-- Cards Grid -->
+    <section id="itemsGrid" class="grid grid-cols-1 md:grid-cols-2 gap-4"></section>
+
+    <!-- Empty State -->
+    <div id="emptyState" class="hidden text-center py-12 bg-white rounded-2xl border border-dashed border-gray-300">
+      <p class="text-sm font-medium text-gray-600">目前沒有符合條件的紀錄</p>
+      <p class="text-xs text-gray-400 mt-1">在上方貼上任何網址或文案，系統會自動讀取內容並加上分類標籤</p>
+    </div>
+  </main>
+
+  <!-- Custom Rules Modal -->
+  <div id="rulesModal" class="hidden fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-lg w-full max-h-[85vh] flex flex-col shadow-xl overflow-hidden">
+      <div class="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
+        <div>
+          <h2 class="text-base font-bold text-gray-900">自訂關鍵字分類規則</h2>
+          <p class="text-xs text-gray-500">當網址、標題或文案內容包含特定關鍵字時，自動套用指定標籤</p>
+        </div>
+        <button id="closeRulesBtn" type="button" class="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 cursor-pointer">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+
+      <div class="p-5 space-y-4 overflow-y-auto flex-1">
+        <form id="ruleForm" class="flex flex-col sm:flex-row gap-2">
+          <input id="ruleKeyword" type="text" placeholder="網域或文案關鍵字 (如: 拉麵, etf)" class="flex-1 rounded-xl border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400" required />
+          <input id="ruleTag" type="text" placeholder="分類標籤 (如: 美食)" class="sm:w-36 rounded-xl border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400" required />
+          <button type="submit" class="px-4 py-2 rounded-xl bg-amber-400 hover:bg-amber-500 text-amber-950 text-sm font-semibold transition shrink-0 cursor-pointer">新增</button>
+        </form>
+
+        <div id="rulesList" class="space-y-2"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- AI Settings Modal -->
+  <div id="aiModal" class="hidden fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-md w-full shadow-xl overflow-hidden">
+      <div class="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
+        <div>
+          <h2 class="text-base font-bold text-gray-900">AI 語意理解設定（選填）</h2>
+          <p class="text-xs text-gray-500">填入 Gemini API Key 後，將由 AI 深度判讀文案內容與分類</p>
+        </div>
+        <button id="closeAiBtn" type="button" class="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 cursor-pointer">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+
+      <form id="aiForm" class="p-5 space-y-4">
+        <div>
+          <label for="geminiKeyInput" class="block text-xs font-semibold text-gray-700 mb-1.5">Gemini API Key</label>
+          <input
+            id="geminiKeyInput"
+            type="password"
+            placeholder="貼上 AIza...（留空則使用內建語意計分引擎）"
+            class="w-full rounded-xl border border-gray-200 px-3.5 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
+          />
+          <p class="text-[11px] text-gray-400 mt-1.5 leading-relaxed">
+            金鑰僅儲存在您自己瀏覽器的本機空間（localStorage），不會上傳至其他伺服器。若不填寫，系統仍會使用內建的加權語意計分引擎自動分類。
+          </p>
+        </div>
+
+        <div class="flex items-center justify-end gap-2 pt-1">
+          <button type="button" id="clearAiKeyBtn" class="px-3 py-2 rounded-xl border border-gray-200 text-xs font-medium text-gray-600 hover:bg-gray-50 cursor-pointer">
+            清除金鑰
+          </button>
+          <button type="submit" class="px-4 py-2 rounded-xl bg-gray-900 hover:bg-gray-800 text-white text-xs font-semibold cursor-pointer">
+            儲存設定
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Toast Notification -->
+  <div id="toastContainer" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+  <script>
+    const STORAGE_ITEMS_KEY = 'keep_url_organizer_items_v4';
+    const STORAGE_RULES_KEY = 'keep_url_organizer_rules_v4';
+    const STORAGE_AI_KEY = 'keep_url_organizer_gemini_key_v1';
+
+    const DEFAULT_RULES = [
+      { id: 'r1', keyword: 'youtube.com', tag: '影音娛樂' },
+      { id: 'r2', keyword: 'youtu.be', tag: '影音娛樂' },
+      { id: 'r3', keyword: 'netflix.com', tag: '影音娛樂' },
+      { id: 'r4', keyword: 'threads.net', tag: '社群貼文' },
+      { id: 'r5', keyword: 'threads.com', tag: '社群貼文' },
+      { id: 'r6', keyword: 'instagram.com', tag: '社群貼文' },
+      { id: 'r7', keyword: 'facebook.com', tag: '社群貼文' },
+      { id: 'r8', keyword: 'x.com', tag: '社群貼文' },
+      { id: 'r9', keyword: 'coupang.com', tag: '購物' },
+      { id: 'r10', keyword: 'shopee.tw', tag: '購物' },
+      { id: 'r11', keyword: 'momo.com', tag: '購物' },
+      { id: 'r12', keyword: 'zeczec.com', tag: '購物' },
+      { id: 'r13', keyword: 'archiveofourown.org', tag: '閱讀寫作' },
+      { id: 'r14', keyword: 'writinstone.com', tag: '閱讀寫作' },
+      { id: 'r15', keyword: 'medium.com', tag: '閱讀寫作' },
+      { id: 'r16', keyword: 'vocus.cc', tag: '閱讀寫作' },
+      { id: 'r17', keyword: 'github.com', tag: '技術開發' },
+      { id: 'r18', keyword: 'developers.google.com', tag: '技術開發' },
+      { id: 'r19', keyword: 'maps.google.com', tag: '美食旅遊' },
+      { id: 'r20', keyword: 'google.com/maps', tag: '美食旅遊' },
+      { id: 'r21', keyword: 'klook.com', tag: '旅遊' },
+      { id: 'r22', keyword: 'docs.google.com', tag: '工作筆記' },
+      { id: 'r23', keyword: 'dropbox.com', tag: '工作筆記' },
+      { id: 'r24', keyword: 'notion.so', tag: '工作筆記' }
+    ];
+
+    // 加權語意分類引擎：支援「即使沒寫出分類名稱，也能從語氣、動詞、名詞組合判斷是教學還是美食」
+    const SEMANTIC_MODELS = [
+      {
+        tag: '教學',
+        strong: ['教學', '教程', '步驟', '攻略', '懶人包', '實測', '手把手', '避坑', '指南', '設定教學', '怎麼用', '如何設定'],
+        medium: ['教你', '學會', '只要', '打開設定', '點選', '輸入', '下載', '安裝', '解決', '技巧', '秘訣', '原理', '方法', '原來這樣', '新手必看', '照著做', '第一步', '第二步', '第三步'],
+        patterns: [/(?:^|\n)\s*[1-9][.、)）]\s+/g, /step\s*[1-9]/gi, /(?:只要|只需).{1,12}(?:就能|就可以|即可)/g, /(?:教你|帶你).{1,10}(?:怎麼|如何|快速)/g]
+      },
+      {
+        tag: '美食',
+        strong: ['美食', '餐廳', '食記', '必吃', '必點', '菜單', '營業時間', '訂位', '低消', '公休', '湯頭', '入口即化', '美味'],
+        medium: ['好吃', '口感', '味道', '香濃', '濃郁', '酥脆', '鮮甜', '回訪', '排隊', '巷弄', '捷運', '早午餐', '宵夜', '甜點', '咖啡', '拉麵', '火鍋', '燒肉', '牛排', '義大利麵', '飲料', 'cp值', '飽足感', '內用', '外帶', '地址'],
+        patterns: [/\d{1,2}:\d{2}\s*[-~～]\s*\d{1,2}:\d{2}/g, /(?:週[一二三四五六日天]|星期[一二三四五六日天])公休/g, /捷運.{1,8}站/g]
+      },
+      {
+        tag: '食譜',
+        strong: ['食譜', '料理', '烹飪', '烘焙', '食材', '備料', '醬汁', '氣炸鍋', '烤箱'],
+        medium: ['克', '大匙', '小匙', 'ml', '分鐘', '小火', '中火', '大火', '拌勻', '醃製', '切丁', '切片', '下鍋', '起鍋', '做法', '減脂餐', '便當'],
+        patterns: [/\d+\s*(?:克|g|ml|大匙|小匙|匙|顆)/gi]
+      },
+      {
+        tag: '購物',
+        strong: ['優惠', '折扣', '團購', '開箱', '免運', '下單', '募資', '預購', '補貨'],
+        medium: ['價格', '價錢', '特價', '原價', '好物', '推薦買', '聯名', '周邊', '質感', '好用', '缺點', '優點', '評價', '連結在'],
+        patterns: [/(?:NT\$|\$|新台幣)\s*\d+/gi, /\d+\s*折/g]
+      },
+      {
+        tag: '旅遊',
+        strong: ['自由行', '行程', '住宿', '飯店', '民宿', '機票', '景點', '一日遊', 'check in'],
+        medium: ['交通', '接駁', '退房', '入住', '海景', '溫泉', '打卡', '門票', '預約', '出發', '機場', '車站'],
+        patterns: [/\d+\s*天\s*\d+\s*夜/g]
+      },
+      {
+        tag: '理財投資',
+        strong: ['投資', '理財', '高股息', 'etf', '配息', '存股', '報稅', '統編', '基金'],
+        medium: ['殖利率', '報酬率', '月配', '季配', '淨值', '手續費', '股價', '大盤', '利率', '定存', '帳戶', '扣款'],
+        patterns: [/\d+(?:\.\d+)?%/g]
+      },
+      {
+        tag: '美妝保養',
+        strong: ['保養', '護膚', '保濕', '精華液', '乳霜', '防曬', '敷臉', '彩妝'],
+        medium: ['肌膚', '皮膚', '毛孔', '乾燥', '出油', '敏感肌', '成分', '蘆薈', '羊毛脂', '角質', '修護', '吸收', '清爽', '不黏膩'],
+        patterns: []
+      },
+      {
+        tag: '閱讀寫作',
+        strong: ['小說', '同人', '連載', '故事', '寫作', '大綱', '書單', '文筆'],
+        medium: ['主角', '角色', '劇情', '結局', '番外', '章節', '靈感', '設定', '情感', '虐', '甜文', '作者'],
+        patterns: []
+      },
+      {
+        tag: '礦石占星',
+        strong: ['水晶', '龍龜', '星盤', '宿曜', '命理', '流年', '塔羅', '生命靈數'],
+        medium: ['手串', '手鍊', '紫水晶', '月光石', '拉長石', '幽靈', '螢石', '星座', '金星', '火星', '上升', '合盤', '能量'],
+        patterns: []
+      },
+      {
+        tag: '工作筆記',
+        strong: ['會議', '專案', '待辦', '報告', '簡報', '企劃', '客戶'],
+        medium: ['進度', '時程', '截止', '確認', '修改', '流程', '表單', '檔案', '聯絡', '簽核'],
+        patterns: []
+      }
+    ];
+
+    const ZH_STOPWORDS = new Set([
+      '一個', '我們', '你們', '他們', '這個', '那個', '這些', '那些', '什麼', '怎麼', '為什麼',
+      '可以', '可能', '應該', '需要', '想要', '已經', '正在', '因為', '所以', '但是', '如果',
+      '雖然', '然而', '以及', '或者', '而且', '不過', '只是', '就是', '還是', '非常', '比較',
+      '沒有', '不是', '不會', '不能', '不要', '自己', '大家', '知道', '覺得', '看到', '使用',
+      '透過', '關於', '進行', '提供', '發現', '了解', '分享', '推薦', '整理', '文章', '內容',
+      '網頁', '網站', '連結', '首頁', '登入', '註冊', '搜尋', '更多', '全部', '相關', '最新',
+      '時間', '今天', '現在', '時候', '地方', '方式', '問題', '答案', '功能', '系統', '平台',
+      '真的', '其實', '感覺', '這樣', '那樣', '一樣', '一下', '一起', '東西', '事情', '只要'
+    ]);
+
+    const EN_STOPWORDS = new Set([
+      'the', 'and', 'for', 'with', 'this', 'that', 'from', 'your', 'you', 'are', 'was', 'were',
+      'have', 'has', 'had', 'not', 'but', 'what', 'all', 'can', 'will', 'just', 'more', 'about',
+      'how', 'why', 'when', 'where', 'who', 'which', 'their', 'there', 'here', 'http', 'https',
+      'www', 'com', 'org', 'net', 'html', 'page', 'site', 'home', 'login', 'sign', 'read', 'post'
+    ]);
+
+    const SAMPLE_ITEMS = [
+      {
+        id: 'sample-1',
+        url: '',
+        title: '範例：板橋巷弄濃郁豚骨拉麵',
+        description: '湯頭熬了八小時超濃郁，叉燒入口即化，從捷運江子翠站走五分鐘就到，17:30 開始排隊，週二公休。',
+        domain: '語意自動分類',
+        tags: ['美食', '豚骨拉麵', '江子翠'],
+        savedToKeep: false,
+        contentFetched: false,
+        aiClassified: false,
+        createdAt: new Date().toISOString()
+      },
+      {
+        id: 'sample-2',
+        url: '',
+        title: '範例：手機省電與通知設定整理',
+        description: '1. 打開設定選單 2. 把背景重新整理關掉 3. 只要調整這三個地方，實測續航力多兩小時。',
+        domain: '語意自動分類',
+        tags: ['教學', '設定', '續航力'],
+        savedToKeep: false,
+        contentFetched: false,
+        aiClassified: false,
+        createdAt: new Date(Date.now() - 3600000).toISOString()
+      }
+    ];
+
+    let rules = loadStorage(STORAGE_RULES_KEY, DEFAULT_RULES);
+    let items = loadStorage(STORAGE_ITEMS_KEY, SAMPLE_ITEMS);
+    let geminiKey = loadPlainStorage(STORAGE_AI_KEY, '');
+    let activeCategory = 'ALL';
+
+    function loadStorage(key, fallback) {
+      try {
+        const raw = localStorage.getItem(key);
+        if (!raw) return JSON.parse(JSON.stringify(fallback));
+        const parsed = JSON.parse(raw);
+        return Array.isArray(parsed) ? parsed : JSON.parse(JSON.stringify(fallback));
+      } catch (e) {
+        return JSON.parse(JSON.stringify(fallback));
+      }
+    }
+
+    function saveStorage(key, value) {
+      try {
+        localStorage.setItem(key, JSON.stringify(value));
+      } catch (e) {
+        // Ignore
+      }
+    }
+
+    function loadPlainStorage(key, fallback) {
+      try {
+        return localStorage.getItem(key) || fallback;
+      } catch (e) {
+        return fallback;
+      }
+    }
+
+    function savePlainStorage(key, val) {
+      try {
+        if (val) localStorage.setItem(key, val);
+        else localStorage.removeItem(key);
+      } catch (e) {
+        // Ignore
+      }
+    }
+
+    function updateAiIndicator() {
+      const dot = document.getElementById('aiBadgeDot');
+      if (geminiKey) {
+        dot.className = 'w-2 h-2 rounded-full bg-emerald-500';
+      } else {
+        dot.className = 'w-2 h-2 rounded-full bg-gray-300';
+      }
+    }
+
+    function extractFirstUrl(rawText) {
+      const match = rawText.match(/https?:\/\/[^\s\u4e00-\u9fff]+/i);
+      if (match) {
+        try {
+          return new URL(match[0]).href;
+        } catch (e) {
+          return '';
+        }
+      }
+      const trimmed = rawText.trim();
+      if (!/\s/.test(trimmed) && /^[a-z0-9-]+(\.[a-z]{2,})+(\/.*)?$/i.test(trimmed)) {
+        try {
+          return new URL('https://' + trimmed).href;
+        } catch (e) {
+          return '';
+        }
+      }
+      return '';
+    }
+
+    function extractDomain(urlStr) {
+      if (!urlStr) return '';
+      try {
+        const u = new URL(urlStr);
+        return u.hostname.replace(/^www\./i, '');
+      } catch (e) {
+        return '';
+      }
+    }
+
+    function scoreSemanticCategories(text) {
+      const lower = text.toLowerCase();
+      const scores = [];
+
+      for (const model of SEMANTIC_MODELS) {
+        let score = 0;
+        for (const kw of model.strong) {
+          if (lower.includes(kw.toLowerCase())) score += 3;
+        }
+        for (const kw of model.medium) {
+          if (lower.includes(kw.toLowerCase())) score += 1.5;
+        }
+        for (const pat of model.patterns) {
+          const matches = text.match(pat);
+          if (matches && matches.length > 0) {
+            score += Math.min(matches.length * 1.5, 4.5);
+          }
+        }
+        if (score >= 2.5) {
+          scores.push({ tag: model.tag, score });
+        }
+      }
+
+      scores.sort((a, b) => b.score - a.score);
+      return scores.slice(0, 2).map(s => s.tag);
+    }
+
+    function extractContentKeywords(text, maxKeywords = 3) {
+      if (!text || !text.trim()) return [];
+      const freq = new Map();
+
+      const cjkRuns = text.match(/[\u4e00-\u9fff]{2,}/g) || [];
+      for (const run of cjkRuns) {
+        if (run.length <= 4) {
+          if (!ZH_STOPWORDS.has(run)) {
+            freq.set(run, (freq.get(run) || 0) + 2.5);
+          }
+        } else {
+          for (let len = 2; len <= 3; len++) {
+            for (let i = 0; i <= run.length - len; i++) {
+              const gram = run.slice(i, i + len);
+              if (!ZH_STOPWORDS.has(gram)) {
+                freq.set(gram, (freq.get(gram) || 0) + 1);
+              }
+            }
+          }
+        }
+      }
+
+      const enWords = text.toLowerCase().match(/[a-z][a-z0-9]{2,18}/g) || [];
+      for (const w of enWords) {
+        if (!EN_STOPWORDS.has(w)) {
+          freq.set(w, (freq.get(w) || 0) + 1.5);
+        }
+      }
+
+      const sorted = Array.from(freq.entries())
+        .filter(([, score]) => score >= 1.5)
+        .sort((a, b) => b[1] - a[1]);
+
+      const picked = [];
+      for (const [term] of sorted) {
+        if (picked.length >= maxKeywords) break;
+        const overlaps = picked.some(p => p.includes(term) || term.includes(p));
+        if (!overlaps) picked.push(term);
+      }
+
+      return picked;
+    }
+
+    function classifyContentLocal(urlStr, titleStr = '', copyText = '', extraTagsStr = '') {
+      const combined = `${urlStr} ${titleStr} ${copyText}`.toLowerCase();
+      const tagSet = new Set();
+
+      // 1. Custom & domain rules
+      for (const rule of rules) {
+        if (rule.keyword && combined.includes(rule.keyword.toLowerCase())) {
+          tagSet.add(rule.tag.replace(/^#/, '').trim());
+        }
+      }
+
+      // 2. Semantic scored classification (distinguishes 教學 vs 美食 vs 購物...)
+      const semanticTags = scoreSemanticCategories(`${titleStr}\n${copyText}`);
+      semanticTags.forEach(t => tagSet.add(t));
+
+      // 3. Domain brand keyword
+      const domain = extractDomain(urlStr);
+      if (domain) {
+        const mainPart = domain.split('.')[0];
+        if (mainPart && mainPart.length >= 2 && mainPart !== 'com' && mainPart !== 'org') {
+          tagSet.add(mainPart);
+        }
+      }
+
+      // 4. Extract top keywords
+      const cleanCopy = copyText.replace(/https?:\/\/\S+/g, ' ');
+      const textForExtraction = `${titleStr} ${titleStr} ${cleanCopy}`.trim();
+      const extracted = extractContentKeywords(textForExtraction, 3);
+      extracted.forEach(kw => tagSet.add(kw));
+
+      // 5. User extra tags
+      if (extraTagsStr.trim()) {
+        extraTagsStr.split(/[,，\s]+/).forEach(t => {
+          const clean = t.replace(/^#/, '').trim();
+          if (clean) tagSet.add(clean);
+        });
+      }
+
+      if (tagSet.size === 0) {
+        tagSet.add('待整理');
+      }
+
+      return Array.from(tagSet).slice(0, 7);
+    }
+
+    async function classifyWithGemini(apiKey, urlStr, titleStr, copyText) {
+      const prompt = `請閱讀以下內容，判斷它屬於哪種主題分類（例如：教學、美食、食譜、購物、旅遊、美妝保養、理財投資、閱讀寫作、工作筆記、影音娛樂、生活靈感等），並萃取出精準的繁體中文標籤（總共 3 到 5 個標籤，第一個標籤必須是最準確的主題大分類）。若使用者未提供標題，也請給一個 15 字內的簡潔標題。
+請嚴格以 JSON 格式回覆，不要加 markdown 標記：
+{"title": "...", "tags": ["分類1", "關鍵字2", "關鍵字3"]}
+
+網址：${urlStr || '無'}
+既定標題：${titleStr || '無'}
+文案內容：
+${copyText.slice(0, 2000)}`;
+
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 9000);
+      try {
+        const res = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${encodeURIComponent(apiKey)}`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            signal: controller.signal,
+            body: JSON.stringify({
+              contents: [{ parts: [{ text: prompt }] }],
+              generationConfig: {
+                temperature: 0.2,
+                responseMimeType: 'application/json'
+              }
+            })
+          }
+        );
+        clearTimeout(timer);
+        if (!res.ok) return null;
+        const data = await res.json();
+        const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+        const parsed = JSON.parse(rawText);
+        if (parsed && Array.isArray(parsed.tags) && parsed.tags.length > 0) {
+          return {
+            title: typeof parsed.title === 'string' ? parsed.title.trim() : '',
+            tags: parsed.tags.map(t => String(t).replace(/^#/, '').trim()).filter(Boolean)
+          };
+        }
+      } catch (e) {
+        clearTimeout(timer);
+      }
+      return null;
+    }
+
+    async function fetchPageContent(urlStr) {
+      let fetchedTitle = '';
+      let fetchedDesc = '';
+      let fetchedBody = '';
+      let success = false;
+
+      try {
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), 5500);
+        const res = await fetch(`https://api.microlink.io/?url=${encodeURIComponent(urlStr)}`, {
+          signal: controller.signal
+        });
+        clearTimeout(timer);
+        if (res.ok) {
+          const json = await res.json();
+          if (json && json.status === 'success' && json.data) {
+            fetchedTitle = (json.data.title || '').trim();
+            fetchedDesc = (json.data.description || '').trim();
+            if (fetchedTitle || fetchedDesc) success = true;
+          }
+        }
+      } catch (e) {
+        // Ignore
+      }
+
+      try {
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), 6500);
+        const res = await fetch(`https://r.jina.ai/${urlStr}`, {
+          signal: controller.signal
+        });
+        clearTimeout(timer);
+        if (res.ok) {
+          const text = await res.text();
+          if (text && text.length > 40) {
+            if (!fetchedTitle) {
+              const titleMatch = text.match(/^Title:\s*(.+)$/m);
+              if (titleMatch) fetchedTitle = titleMatch[1].trim();
+            }
+            const cleaned = text
+              .replace(/https?:\/\/\S+/g, ' ')
+              .replace(/[#*`>\[\]()]/g, ' ')
+              .replace(/\s+/g, ' ')
+              .trim()
+              .slice(0, 1500);
+            fetchedBody = cleaned;
+            success = true;
+          }
+        }
+      } catch (e) {
+        // Ignore
+      }
+
+      return { success, title: fetchedTitle, description: fetchedDesc, body: fetchedBody };
+    }
+
+    function setFetchStatus(message, tone = 'loading') {
+      const box = document.getElementById('fetchStatusBox');
+      if (!message) {
+        box.classList.add('hidden');
+        return;
+      }
+      const styles = {
+        loading: 'bg-blue-50 text-blue-700 border border-blue-200',
+        success: 'bg-emerald-50 text-emerald-700 border border-emerald-200',
+        warn: 'bg-amber-50 text-amber-800 border border-amber-200'
+      };
+      box.className = `rounded-xl px-3.5 py-2 text-xs font-medium flex items-center gap-2 ${styles[tone] || styles.loading}`;
+      box.textContent = message;
+      box.classList.remove('hidden');
+    }
+
+    function formatForKeep(item) {
+      const tagLine = item.tags.map(t => `#${t}`).join(' ');
+      const urlPart = item.url ? `\n${item.url}` : '';
+      const descPart = item.description ? `\n${item.description}` : '';
+      return `${item.title}${urlPart}${descPart}\n\n${tagLine}`;
+    }
+
+    async function copyText(text) {
+      try {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          await navigator.clipboard.writeText(text);
+          return true;
+        }
+      } catch (e) {
+        // Fallback
+      }
+      try {
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        ta.style.position = 'fixed';
+        ta.style.opacity = '0';
+        document.body.appendChild(ta);
+        ta.select();
+        const ok = document.execCommand('copy');
+        document.body.removeChild(ta);
+        return ok;
+      } catch (e) {
+        return false;
+      }
+    }
+
+    function showToast(message, type = 'info') {
+      const container = document.getElementById('toastContainer');
+      const toast = document.createElement('div');
+      const bg = type === 'success' ? 'bg-emerald-700 text-white' : type === 'error' ? 'bg-red-600 text-white' : 'bg-gray-900 text-white';
+      toast.className = `toast-enter pointer-events-auto px-4 py-2.5 rounded-xl text-xs sm:text-sm font-medium shadow-lg ${bg}`;
+      toast.textContent = message;
+      container.appendChild(toast);
+      setTimeout(() => {
+        toast.remove();
+      }, 3000);
+    }
+
+    function escapeHtml(str) {
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+
+    function renderCategoryChips() {
+      const bar = document.getElementById('categoryFilterBar');
+      const counts = { ALL: items.length };
+      items.forEach(item => {
+        item.tags.forEach(t => {
+          counts[t] = (counts[t] || 0) + 1;
+        });
+      });
+
+      const tags = Object.keys(counts).filter(k => k !== 'ALL');
+      if (activeCategory !== 'ALL' && !counts[activeCategory]) {
+        activeCategory = 'ALL';
+      }
+
+      let html = `
+        <button type="button" data-cat="ALL" class="cat-chip px-3 py-1 rounded-full text-xs font-medium transition cursor-pointer ${
+          activeCategory === 'ALL'
+            ? 'bg-gray-900 text-white'
+            : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'
+        }">全部 (${counts.ALL})</button>
+      `;
+
+      tags.forEach(tag => {
+        const isActive = activeCategory === tag;
+        html += `
+          <button type="button" data-cat="${escapeHtml(tag)}" class="cat-chip px-3 py-1 rounded-full text-xs font-medium transition cursor-pointer ${
+            isActive
+              ? 'bg-amber-400 text-amber-950 font-semibold'
+              : 'bg-white border border-gray-200 text-gray-600 hover:bg-amber-50'
+          }">#${escapeHtml(tag)} (${counts[tag]})</button>
+        `;
+      });
+
+      bar.innerHTML = html;
+      bar.querySelectorAll('.cat-chip').forEach(btn => {
+        btn.addEventListener('click', () => {
+          activeCategory = btn.getAttribute('data-cat');
+          renderAll();
+        });
+      });
+    }
+
+    function renderItems() {
+      const grid = document.getElementById('itemsGrid');
+      const empty = document.getElementById('emptyState');
+      const search = document.getElementById('searchInput').value.trim().toLowerCase();
+      const status = document.getElementById('statusFilter').value;
+
+      const filtered = items.filter(item => {
+        if (activeCategory !== 'ALL' && !item.tags.includes(activeCategory)) return false;
+        if (status === 'pending' && item.savedToKeep) return false;
+        if (status === 'saved' && !item.savedToKeep) return false;
+        if (search) {
+          const hay = (item.title + ' ' + (item.description || '') + ' ' + (item.url || '') + ' ' + item.tags.join(' ')).toLowerCase();
+          if (!hay.includes(search)) return false;
+        }
+        return true;
+      });
+
+      if (filtered.length === 0) {
+        grid.innerHTML = '';
+        empty.classList.remove('hidden');
+        return;
+      }
+
+      empty.classList.add('hidden');
+      const canShare = typeof navigator.share === 'function';
+
+      grid.innerHTML = filtered.map(item => {
+        const tagsHtml = item.tags.map(tag => `
+          <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-900">
+            #${escapeHtml(tag)}
+            <button type="button" data-action="remove-tag" data-id="${escapeHtml(item.id)}" data-tag="${escapeHtml(tag)}" class="hover:text-red-600 font-bold ml-0.5 cursor-pointer" title="移除標籤">&times;</button>
+          </span>
+        `).join('');
+
+        return `
+          <article class="bg-white rounded-2xl border ${item.savedToKeep ? 'border-emerald-200/90' : 'border-gray-200/80'} keep-shadow p-4 flex flex-col justify-between gap-3.5">
+            <div class="space-y-2">
+              <div class="flex items-start justify-between gap-2">
+                <div class="min-w-0">
+                  <div class="flex flex-wrap items-center gap-1.5 mb-1">
+                    <span class="text-[11px] font-medium px-2 py-0.5 rounded-md bg-gray-100 text-gray-600">${escapeHtml(item.domain || '語意自動分類')}</span>
+                    ${item.aiClassified
+                      ? '<span class="text-[11px] font-medium px-2 py-0.5 rounded-md bg-purple-50 text-purple-700">AI 語意判讀</span>'
+                      : ''
+                    }
+                    ${item.contentFetched
+                      ? '<span class="text-[11px] font-medium px-2 py-0.5 rounded-md bg-blue-50 text-blue-700">已讀網頁內文</span>'
+                      : ''
+                    }
+                    ${item.savedToKeep
+                      ? '<span class="text-[11px] font-semibold px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700">已存 Keep</span>'
+                      : '<span class="text-[11px] font-medium px-2 py-0.5 rounded-md bg-amber-50 text-amber-700">待存 Keep</span>'
+                    }
+                  </div>
+                  <h3 class="text-sm font-bold text-gray-900 line-clamp-2" title="${escapeHtml(item.title)}">${escapeHtml(item.title)}</h3>
+                </div>
+                <button type="button" data-action="delete" data-id="${escapeHtml(item.id)}" class="p-1.5 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 transition shrink-0 cursor-pointer" title="刪除">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                  </svg>
+                </button>
+              </div>
+
+              ${item.description ? `<p class="text-xs text-gray-600 line-clamp-3 leading-relaxed">${escapeHtml(item.description)}</p>` : ''}
+
+              ${item.url ? `
+                <a href="${escapeHtml(item.url)}" target="_blank" rel="noopener noreferrer" class="block text-xs text-blue-600 hover:underline truncate">
+                  ${escapeHtml(item.url)}
+                </a>
+              ` : ''}
+
+              <div class="flex flex-wrap items-center gap-1.5 pt-1">
+                ${tagsHtml}
+                <button type="button" data-action="add-tag" data-id="${escapeHtml(item.id)}" class="px-2 py-0.5 rounded-full text-xs border border-dashed border-gray-300 text-gray-500 hover:border-amber-400 hover:text-amber-800 transition cursor-pointer">
+                  + 標籤
+                </button>
+              </div>
+
+              <div class="hidden add-tag-row pt-1" data-tag-input-for="${escapeHtml(item.id)}">
+                <div class="flex gap-1.5">
+                  <input type="text" placeholder="輸入新標籤..." class="flex-1 rounded-lg border border-gray-200 px-2.5 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-amber-400" />
+                  <button type="button" data-action="confirm-add-tag" data-id="${escapeHtml(item.id)}" class="px-2.5 py-1 rounded-lg bg-gray-900 text-white text-xs font-medium cursor-pointer">加入</button>
+                </div>
+              </div>
+            </div>
+
+            <div class="pt-2.5 border-t border-gray-100 flex flex-wrap items-center justify-between gap-2">
+              <button type="button" data-action="toggle-saved" data-id="${escapeHtml(item.id)}" class="text-xs font-medium text-gray-500 hover:text-gray-800 cursor-pointer">
+                ${item.savedToKeep ? '取消已存標記' : '標記為已存 Keep'}
+              </button>
+
+              <div class="flex items-center gap-1.5">
+                ${canShare ? `
+                  <button type="button" data-action="share" data-id="${escapeHtml(item.id)}" class="px-2.5 py-1.5 rounded-lg border border-gray-200 hover:bg-gray-50 text-xs font-medium text-gray-700 transition cursor-pointer">
+                    系統分享
+                  </button>
+                ` : ''}
+                <button type="button" data-action="copy" data-id="${escapeHtml(item.id)}" class="px-2.5 py-1.5 rounded-lg border border-gray-200 hover:bg-gray-50 text-xs font-medium text-gray-700 transition cursor-pointer">
+                  僅複製內容
+                </button>
+                <button type="button" data-action="copy-open" data-id="${escapeHtml(item.id)}" class="px-3 py-1.5 rounded-lg bg-amber-400 hover:bg-amber-500 text-amber-950 text-xs font-semibold transition cursor-pointer">
+                  複製並開 Keep
+                </button>
+              </div>
+            </div>
+          </article>
+        `;
+      }).join('');
+    }
+
+    function renderRules() {
+      const list = document.getElementById('rulesList');
+      if (rules.length === 0) {
+        list.innerHTML = '<p class="text-xs text-gray-400 text-center py-4">目前沒有自訂規則</p>';
+        return;
+      }
+      list.innerHTML = rules.map(r => `
+        <div class="flex items-center justify-between gap-2 px-3 py-2 rounded-xl bg-gray-50 border border-gray-200/70 text-xs sm:text-sm">
+          <div class="flex items-center gap-2 min-w-0">
+            <span class="font-mono text-gray-700 truncate">${escapeHtml(r.keyword)}</span>
+            <span class="text-gray-400">&rarr;</span>
+            <span class="px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 font-medium text-xs shrink-0">#${escapeHtml(r.tag)}</span>
+          </div>
+          <button type="button" data-rule-del="${escapeHtml(r.id)}" class="text-gray-400 hover:text-red-600 px-1.5 py-0.5 rounded cursor-pointer" title="刪除規則">&times;</button>
+        </div>
+      `).join('');
+
+      list.querySelectorAll('[data-rule-del]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const rid = btn.getAttribute('data-rule-del');
+          rules = rules.filter(r => r.id !== rid);
+          saveStorage(STORAGE_RULES_KEY, rules);
+          renderRules();
+          updateLivePreview();
+        });
+      });
+    }
+
+    function renderAll() {
+      renderCategoryChips();
+      renderItems();
+    }
+
+    function updateLivePreview() {
+      const rawInput = document.getElementById('urlInput').value.trim();
+      const titleRaw = document.getElementById('titleInput').value.trim();
+      const extraRaw = document.getElementById('customTagsInput').value.trim();
+      const box = document.getElementById('livePreviewBox');
+      const tagsBox = document.getElementById('livePreviewTags');
+
+      if (!rawInput) {
+        box.classList.add('hidden');
+        return;
+      }
+      const detectedUrl = extractFirstUrl(rawInput);
+      const copyOnly = rawInput.replace(detectedUrl, '').trim();
+      const tags = classifyContentLocal(detectedUrl, titleRaw, copyOnly, extraRaw);
+      tagsBox.innerHTML = tags.map(t => `<span class="px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 font-medium">#${escapeHtml(t)}</span>`).join('');
+      box.classList.remove('hidden');
+    }
+
+    // Demo quick-fill buttons
+    document.getElementById('demoFoodBtn').addEventListener('click', () => {
+      document.getElementById('urlInput').value = '藏在巷弄裡的炭火燒肉，牛五花跟厚切牛舌必點，肉汁超甜，記得先訂位，捷運走過來只要五分鐘！';
+      document.getElementById('titleInput').value = '';
+      updateLivePreview();
+    });
+
+    document.getElementById('demoTutorialBtn').addEventListener('click', () => {
+      document.getElementById('urlInput').value = '手機一直跳廣告怎麼辦？實測這三個步驟就能解決：1. 打開瀏覽器設定 2. 把彈出視窗關掉 3. 清除網站快取資料，照著做馬上變順。';
+      document.getElementById('titleInput').value = '';
+      updateLivePreview();
+    });
+
+    // Input listeners
+    document.getElementById('urlInput').addEventListener('input', updateLivePreview);
+    document.getElementById('titleInput').addEventListener('input', updateLivePreview);
+    document.getElementById('customTagsInput').addEventListener('input', updateLivePreview);
+
+    document.getElementById('urlForm').addEventListener('submit', async e => {
+      e.preventDefault();
+      const urlInput = document.getElementById('urlInput');
+      const titleInput = document.getElementById('titleInput');
+      const extraInput = document.getElementById('customTagsInput');
+      const submitBtn = document.getElementById('submitBtn');
+      const autoFetch = document.getElementById('autoFetchToggle').checked;
+
+      const rawText = urlInput.value.trim();
+      if (!rawText) {
+        showToast('請貼上網址或文案內容', 'error');
+        return;
+      }
+
+      const detectedUrl = extractFirstUrl(rawText);
+      const userCopy = rawText.replace(detectedUrl, '').trim();
+      const domain = detectedUrl ? extractDomain(detectedUrl) : '語意自動分類';
+      let title = titleInput.value.trim();
+      let description = userCopy;
+      let combinedCopy = userCopy;
+      let contentFetched = false;
+      let aiClassified = false;
+
+      submitBtn.disabled = true;
+      submitBtn.textContent = '正在分析內容...';
+
+      if (detectedUrl && autoFetch) {
+        setFetchStatus('正在讀取網頁內容以分析語意分類...', 'loading');
+        const fetched = await fetchPageContent(detectedUrl);
+        if (fetched.success) {
+          contentFetched = true;
+          if (!title && fetched.title) title = fetched.title;
+          if (!description && fetched.description) description = fetched.description;
+          combinedCopy = `${userCopy} ${fetched.title} ${fetched.description} ${fetched.body}`.trim();
+        }
+      }
+
+      let tags = [];
+      if (geminiKey) {
+        setFetchStatus('正在由 Gemini AI 深度判讀文案分類與關鍵字...', 'loading');
+        const aiResult = await classifyWithGemini(geminiKey, detectedUrl, title, combinedCopy);
+        if (aiResult) {
+          aiClassified = true;
+          if (!title && aiResult.title) title = aiResult.title;
+          const tagSet = new Set(aiResult.tags);
+          if (extraInput.value.trim()) {
+            extraInput.value.split(/[,，\s]+/).forEach(t => {
+              const clean = t.replace(/^#/, '').trim();
+              if (clean) tagSet.add(clean);
+            });
+          }
+          tags = Array.from(tagSet);
+          setFetchStatus('已完成 AI 語意判讀並加上分類標籤！', 'success');
+        }
+      }
+
+      if (!aiClassified) {
+        tags = classifyContentLocal(detectedUrl, title, combinedCopy, extraInput.value);
+        if (detectedUrl && autoFetch && !contentFetched) {
+          setFetchStatus('該網站限制自動讀取，已改由語意計分引擎依文案與網址分類。', 'warn');
+        } else {
+          setFetchStatus('已透過語意計分引擎自動判讀分類與關鍵字！', 'success');
+        }
+      }
+
+      if (!title) {
+        if (userCopy) {
+          const firstLine = userCopy.split(/\n/)[0].trim();
+          title = firstLine.length > 36 ? firstLine.slice(0, 36) + '…' : firstLine;
+        } else {
+          title = `${domain} 收藏連結`;
+        }
+      }
+
+      submitBtn.disabled = false;
+      submitBtn.textContent = '讀取文案並加上分類';
+
+      const newItem = {
+        id: 'item-' + Date.now(),
+        url: detectedUrl,
+        title,
+        description: description.slice(0, 220),
+        domain,
+        tags,
+        savedToKeep: false,
+        contentFetched,
+        aiClassified,
+        createdAt: new Date().toISOString()
+      };
+
+      items.unshift(newItem);
+      saveStorage(STORAGE_ITEMS_KEY, items);
+
+      urlInput.value = '';
+      titleInput.value = '';
+      extraInput.value = '';
+      document.getElementById('livePreviewBox').classList.add('hidden');
+
+      renderAll();
+      showToast(`已分類：${tags.map(t => '#' + t).join(' ')}`, 'success');
+    });
+
+    document.getElementById('itemsGrid').addEventListener('click', async e => {
+      const btn = e.target.closest('[data-action]');
+      if (!btn) return;
+      const action = btn.getAttribute('data-action');
+      const id = btn.getAttribute('data-id');
+      const item = items.find(i => i.id === id);
+      if (!item) return;
+
+      if (action === 'delete') {
+        items = items.filter(i => i.id !== id);
+        saveStorage(STORAGE_ITEMS_KEY, items);
+        renderAll();
+        showToast('已刪除該筆紀錄');
+      } else if (action === 'toggle-saved') {
+        item.savedToKeep = !item.savedToKeep;
+        saveStorage(STORAGE_ITEMS_KEY, items);
+        renderAll();
+      } else if (action === 'remove-tag') {
+        const tagToRemove = btn.getAttribute('data-tag');
+        item.tags = item.tags.filter(t => t !== tagToRemove);
+        if (item.tags.length === 0) item.tags.push('待整理');
+        saveStorage(STORAGE_ITEMS_KEY, items);
+        renderAll();
+      } else if (action === 'add-tag') {
+        const row = document.querySelector(`[data-tag-input-for="${CSS.escape(id)}"]`);
+        if (row) {
+          row.classList.toggle('hidden');
+          const inp = row.querySelector('input');
+          if (inp && !row.classList.contains('hidden')) inp.focus();
+        }
+      } else if (action === 'confirm-add-tag') {
+        const row = document.querySelector(`[data-tag-input-for="${CSS.escape(id)}"]`);
+        const inp = row ? row.querySelector('input') : null;
+        const newTag = inp ? inp.value.replace(/^#/, '').trim() : '';
+        if (newTag && !item.tags.includes(newTag)) {
+          item.tags = item.tags.filter(t => t !== '待整理');
+          item.tags.push(newTag);
+          saveStorage(STORAGE_ITEMS_KEY, items);
+          renderAll();
+        } else if (row) {
+          row.classList.add('hidden');
+        }
+      } else if (action === 'copy') {
+        const ok = await copyText(formatForKeep(item));
+        showToast(ok ? '已複製內容與分類標籤！' : '複製失敗，請手動選取', ok ? 'success' : 'error');
+      } else if (action === 'copy-open') {
+        const ok = await copyText(formatForKeep(item));
+        item.savedToKeep = true;
+        saveStorage(STORAGE_ITEMS_KEY, items);
+        renderAll();
+        if (ok) {
+          showToast('已複製內容，正在開啟 Google Keep...', 'success');
+        }
+        window.open('https://keep.google.com/', '_blank', 'noopener,noreferrer');
+      } else if (action === 'share') {
+        try {
+          await navigator.share({
+            title: item.title,
+            text: formatForKeep(item),
+            url: item.url || undefined
+          });
+          item.savedToKeep = true;
+          saveStorage(STORAGE_ITEMS_KEY, items);
+          renderAll();
+        } catch (err) {
+          // User cancelled share
+        }
+      }
+    });
+
+    document.getElementById('searchInput').addEventListener('input', renderItems);
+    document.getElementById('statusFilter').addEventListener('change', renderItems);
+
+    document.getElementById('exportBtn').addEventListener('click', () => {
+      if (items.length === 0) {
+        showToast('目前沒有可匯出的資料', 'error');
+        return;
+      }
+      const content = items.map(i => formatForKeep(i)).join('\n\n---\n\n');
+      const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `keep-notes-${new Date().toISOString().slice(0, 10)}.txt`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      showToast('已匯出整理清單 (.txt)', 'success');
+    });
+
+    document.getElementById('clearAllBtn').addEventListener('click', () => {
+      items = [];
+      saveStorage(STORAGE_ITEMS_KEY, items);
+      renderAll();
+      showToast('已清空所有紀錄');
+    });
+
+    // Rules Modal
+    const rulesModal = document.getElementById('rulesModal');
+    document.getElementById('openRulesBtn').addEventListener('click', () => {
+      renderRules();
+      rulesModal.classList.remove('hidden');
+    });
+    document.getElementById('closeRulesBtn').addEventListener('click', () => {
+      rulesModal.classList.add('hidden');
+    });
+    rulesModal.addEventListener('click', e => {
+      if (e.target === rulesModal) rulesModal.classList.add('hidden');
+    });
+
+    document.getElementById('ruleForm').addEventListener('submit', e => {
+      e.preventDefault();
+      const kw = document.getElementById('ruleKeyword').value.trim();
+      const tg = document.getElementById('ruleTag').value.replace(/^#/, '').trim();
+      if (!kw || !tg) return;
+      rules.unshift({ id: 'r-' + Date.now(), keyword: kw, tag: tg });
+      saveStorage(STORAGE_RULES_KEY, rules);
+      document.getElementById('ruleKeyword').value = '';
+      document.getElementById('ruleTag').value = '';
+      renderRules();
+      updateLivePreview();
+      showToast(`已新增規則：${kw} → #${tg}`, 'success');
+    });
+
+    // AI Modal
+    const aiModal = document.getElementById('aiModal');
+    document.getElementById('openAiBtn').addEventListener('click', () => {
+      document.getElementById('geminiKeyInput').value = geminiKey;
+      aiModal.classList.remove('hidden');
+    });
+    document.getElementById('closeAiBtn').addEventListener('click', () => {
+      aiModal.classList.add('hidden');
+    });
+    aiModal.addEventListener('click', e => {
+      if (e.target === aiModal) aiModal.classList.add('hidden');
+    });
+
+    document.getElementById('aiForm').addEventListener('submit', e => {
+      e.preventDefault();
+      geminiKey = document.getElementById('geminiKeyInput').value.trim();
+      savePlainStorage(STORAGE_AI_KEY, geminiKey);
+      updateAiIndicator();
+      aiModal.classList.add('hidden');
+      showToast(geminiKey ? '已啟用 Gemini AI 語意分類！' : '已切換為內建語意計分引擎', 'success');
+    });
+
+    document.getElementById('clearAiKeyBtn').addEventListener('click', () => {
+      geminiKey = '';
+      document.getElementById('geminiKeyInput').value = '';
+      savePlainStorage(STORAGE_AI_KEY, '');
+      updateAiIndicator();
+      aiModal.classList.add('hidden');
+      showToast('已清除 API Key，改用內建語意引擎');
+    });
+
+    // Initial render
+    updateAiIndicator();
+    renderAll();
+  </script>
+</body>
+</html>
